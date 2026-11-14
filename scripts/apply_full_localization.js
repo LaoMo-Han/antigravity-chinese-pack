@@ -364,6 +364,31 @@ const TRANSLATIONS = {
   "Side Question": "侧边提问",
   "Side Questions": "侧边提问",
 
+  // ================= 项目右键与操作菜单 (截图 1 & 2) =================
+  "Copy Project Name": "复制项目名称",
+  "Project Settings": "项目设置",
+  "Show in File Explorer": "在文件资源管理器中显示",
+  "Show in Finder": "在访达中显示",
+
+  // ================= 项目管理过滤与排序菜单 (截图 3) =================
+  "Group By": "分组方式",
+  "Sort Conversations": "会话排序",
+  "Sort Projects": "项目排序",
+  "Last Updated": "最近更新",
+  "Last Prompt": "最新提示词",
+  "Custom Order": "自定义顺序",
+  "Alphabetical": "按名称字母",
+  "Auto Pin": "自动置顶",
+  "Archived Only": "仅显示已归档",
+  "Mark All as Read": "全部标记为已读",
+
+  // ================= 输入框上下文菜单 Add Context (截图 4) =================
+  "Add Context": "添加上下文",
+  "Folder": "文件夹",
+  "Mentions": "引用提及 (@)",
+  "Drive": "云端硬盘 (Drive)",
+  "Set up": "立即配置",
+
   // ================= 侧边栏主导航 =================
   "Automations": "自动化任务",
   "Customizations": "自定义配置与插件",
@@ -515,6 +540,9 @@ function generateInjectionScript() {
         }
         if (/^\\d+[\\d,\\.]* \\/ \\d+[\\d,\\.]* tokens \\([\\d\\.]+%/i.test(trimmed)) {
           return trimmed.replace(/tokens/gi, "Token");
+        }
+        if (/^\d+ files? changed/i.test(trimmed)) {
+          return trimmed.replace(/files? changed/i, "个文件已变更");
         }
         if (trimmed.startsWith("Select model, current:")) {
           return trimmed.replace("Select model, current:", "选择模型（当前：") + "）";
