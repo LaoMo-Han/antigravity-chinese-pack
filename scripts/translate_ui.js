@@ -1,10 +1,10 @@
 /**
- * Antigravity 深度全量汉化引擎 (Full Localization Engine - Comprehensive Edition v3.5)
- * 覆盖：
- * 1. 深度修补 Electron 主进程 dist/ipcHandlers.js，原生级汉化会话右键上下文菜单 (window:show-context-menu)
- * 2. 深度修补 Electron 预加载层 dist/preload.js，在 IPC 发送前拦截并汉化菜单项，并向主世界注入 DOM 汉化引擎
- * 3. 深度修补 Electron 原生顶部菜单 dist/menu.js
- * 4. 毫秒级 DOM 变动与全事件捕获引擎，覆盖所有设置、弹窗、级联子菜单、快捷键与页面元素
+ * Antigravity 深度全量汉化引擎 (Full Localization Engine - Comprehensive Edition v4.0)
+ * 彻底解决：
+ * 1. 系统设置 (Settings) 8 大分类全模块深度汉化与动态模板匹配
+ * 2. preload.js 注入机制彻底重构（采用原生 script 标签直注入，杜绝崩溃，确保冷热重启 100% 常驻）
+ * 3. Electron 主进程 (dist/ipcHandlers.js) 与预加载层 (dist/preload.js) 原生右键菜单持续拦截
+ * 4. 原生顶部系统菜单 (dist/menu.js) 全中文化
  */
 
 const fs = require('fs');
@@ -19,7 +19,158 @@ try {
 }
 
 const TRANSLATIONS = {
-  // ================= 会话右键原生上下文菜单 (用户反馈重点) =================
+  // ================= 系统设置：左侧分类列表 =================
+  "General": "通用设置",
+  "Appearance": "外观设置",
+  "Shortcuts": "快捷键一览",
+  "Models": "模型与配额",
+  "Models & Usage": "模型与用量",
+  "Browser": "浏览器设置",
+  "Application": "应用程序设置",
+  "Account": "账户与方案",
+  "Notifications": "通知中心",
+  "Give Feedback": "提供意见反馈",
+  "Developer": "开发者选项",
+  "Not in Project": "全局设置 (未关联项目)",
+  "Conversations": "会话管理",
+
+  // ================= 系统设置：会话管理 (Conversations - 截图 1 & 2) =================
+  "Settings for conversations outside of projects.": "全局设置（未关联具体项目的独立会话配置）。",
+  "The breakdown below shows token usage from customizations like rules, skills, and MCP. If a budget is exceeded, large rules are demoted to path pointers and large customizations are excluded automatically.": "下方展示了规则、技能与 MCP 等自定义扩展的 Token 消耗拆解明细。若超出预算上限，大型规则将自动降级为文件路径指针，大型自定义扩展将自动被排除。",
+  "Rules": "规则",
+  "Other Customizations": "其他自定义扩展",
+  "Show 1 breakdown": "查看 1 项拆解明细",
+  "Show 2 breakdowns": "查看 2 项拆解明细",
+  "Show 3 breakdowns": "查看 3 项拆解明细",
+  "Show 4 breakdowns": "查看 4 项拆解明细",
+  "Show 5 breakdowns": "查看 5 项拆解明细",
+  "Skills": "技能",
+  "rules": "规则",
+  "skills": "技能",
+
+  // ================= 系统设置：模型与用量 (Models & Usage - 截图 3) =================
+  "Manage your model quota and credits.": "管理您的语言模型配额与额度。",
+  "Plan": "订阅方案",
+  "Upgrade": "升级方案",
+  "Model Credits": "模型额外额度",
+  "Enable AI Credit Overages": "允许超额使用 AI 额度",
+  "When toggled on, Antigravity will use your AI credits to fulfill model requests once you're out of model quota. Antigravity will always use your model quota first before using AI credits.": "开启后，当您的模型配额用尽时，Antigravity 将使用 AI 额外额度继续响应模型请求。Antigravity 始终优先消耗基础模型配额，然后再使用额外额度。",
+  "Gemini Models": "Gemini 模型系列",
+  "Weekly Limit Remaining": "每周剩余配额",
+  "Five Hour Limit Remaining": "5 小时剩余配额",
+  "Claude and GPT models": "Claude 与 GPT 模型系列",
+
+  // ================= 系统设置：通知中心 (Notifications - 截图 4) =================
+  "Manage your notification preferences.": "管理您的系统通知与提示音偏好。",
+  "Enable Notifications for Agent": "启用智能体系统通知",
+  "Show system notifications when your action is needed or the agent finishes.": "当需要您确认操作或智能体完成任务时，发送操作系统通知。",
+  "Sound": "提示音设置",
+  "Enable Sounds for Agent": "启用智能体操作提示音",
+  "Play a sound when your action is needed or the agent finishes.": "当需要您确认操作或智能体完成任务时，播放提示音。",
+  "Volume": "提示声音量",
+  "Set the volume of agent sounds.": "调节智能体提示音的音量大小。",
+
+  // ================= 系统设置：快捷键一览 (Shortcuts - 截图 5) =================
+  "Keyboard shortcuts for quick navigation and control.": "用于快速导航与交互控制的全局快捷键一览。",
+  "Search shortcuts...": "搜索快捷键...",
+  "Navigation": "页面导航快捷键",
+  "Open Conversation Picker": "打开历史会话选择器",
+  "Go Back": "返回上一页",
+  "Go Forward": "前进到下一页",
+  "New Tab": "新建标签页",
+  "Reopen Closed Tab": "重新打开已关闭的标签页",
+  "Select Previous Conversation": "切换至上一个会话",
+  "Select Next Conversation": "切换至下一个会话",
+  "Move Conversation Up": "将会话顺序上移",
+  "Move Conversation Down": "将会话顺序下移",
+  "Global Shortcuts": "全局快捷键",
+  "Conversation Shortcuts": "会话操作快捷键",
+  "Navigation Shortcuts": "页面导航快捷键",
+
+  // ================= 系统设置：外观设置 (Appearance - 截图 6) =================
+  "Configure the agent's visual theme and display preferences.": "配置智能体视觉主题颜色与界面显示偏好。",
+  "Chat": "对话交互偏好",
+  "Conversation Steps": "会话思考步骤展示",
+  "Choose how much detail is shown during a conversation.": "选择在对话过程中显示多少智能体思考与执行细节。",
+  "Theme": "主题模式",
+  "Contrast": "色彩对比度",
+  "Default": "默认标准",
+  "Strong": "高对比度",
+  "Font": "界面字体",
+  "Font Size": "编辑器字号",
+  "Light Theme": "浅色主题配置",
+  "Default Light": "默认浅色",
+  "Preset": "预设配色",
+  "Background": "背景色",
+  "Foreground": "前景色",
+  "Accent": "强调色",
+  "Code Preview": "代码预览样式",
+  "Verbose": "详细展开",
+  "Compact": "紧凑高效",
+  "Comfortable": "标准宽适",
+
+  // ================= 系统设置：应用程序设置 (Application - 截图 7) =================
+  "Manage Antigravity app settings.": "管理 Antigravity 客户端应用设置与环境关联。",
+  "Prevent Sleep": "运行期间阻止系统休眠",
+  "Prevent the computer from sleeping while the app is running.": "当应用程序正在运行且执行任务时，防止计算机进入休眠状态。",
+  "Keep In Menu Bar": "常驻系统托盘 / 菜单栏",
+  "Keep the app accessible from the menu bar and running in the background when all windows are closed.": "关闭所有窗口后，保持应用在后台静默运行并可通过系统托盘随时唤出。",
+  "Remote Control": "跨设备远程控制",
+  "Enable Remote Control": "启用远程控制",
+  "Work with local agents from another device.": "允许从其他已授权设备远程控制和查看本地智能体。",
+  "Notification Settings": "系统级通知权限",
+  "To modify notification settings, open your operating system's system preferences.": "如需修改系统级通知权限，请在操作系统的系统设置中进行配置。",
+  "Open System Preferences": "打开操作系统设置",
+  "Windows Subsystem for Linux": "适用于 Linux 的 Windows 子系统 (WSL)",
+  "Run the app against a Linux environment. Connecting relaunches the app into the selected WSL distro.": "在 Linux 环境下运行应用程序。点击连接后将在此 WSL 发行版中重启客户端。",
+  "Connect": "连接",
+
+  // ================= 系统设置：通用设置 (General - 截图 8) =================
+  "Configure agent execution, queued message delivery, and permissions.": "配置智能体执行策略、排队消息发送时机与安全权限预设。",
+  "Interface Layout": "界面布局模式",
+  "Knowledge Work": "知识工作模式",
+  "Simplified interface for research, writing, and everyday tasks.": "适合调研、写作、规划和日常任务的轻量精简界面。",
+  "Software Engineering": "软件工程模式",
+  "Full interface for coding, developer tools, and managing agents.": "包含代码编辑、开发者工具和智能体编排的完整开发界面。",
+  "Global Permissions": "全局安全权限",
+  "Configure global allowed and denied resource permissions.": "配置全局允许与拒绝访问的系统资源与文件权限。",
+  "Permission Preset": "权限预设模式",
+  "Controls the actions the agent can take.": "控制智能体在当前环境下可自动执行的操作范围。",
+  "Tool Permissions": "工具细粒度权限",
+  "Modify permissions for file, terminal, and MCP tools.": "自定义文件读写、终端指令和 MCP 扩展工具的授权策略。",
+  "Open": "打开配置",
+  "Network Access Rules": "网络访问规则",
+  "Configure allowed and denied URLs for reading.": "配置允许读取与禁止访问的网页与 API 域名列表。",
+  "Execution": "执行策略",
+  "Queued Messages": "排队消息发送策略",
+  "Configure when follow-up messages are sent.": "配置当智能体正在运行时代办追加消息的发送时机。",
+  "Queue": "排队等待",
+  "Send Immediately": "立即发送并打断",
+  "Interrupt the agent and send immediately.": "打断当前智能体运行并立即发送新消息。",
+  "Queue until after the current turn.": "排队等待，直到当前轮次任务完全结束后再发送。",
+  "Enter to Send": "回车键直接发送",
+  "Send messages with the keyboard's Enter key instead of starting a new line.": "使用键盘 Enter 键直接发送消息，而非换行（换行使用 Shift+Enter）。",
+  "Agent Non-Workspace File Access": "工作区外文件访问权限",
+  "Allow the agent to automatically view and edit files outside the current workspace. Use with caution: this gives the agent access to additional potentially-relevant information, but also allows the agent to access credential files, secrets, and other files outside of the workspace that could be targeted in prompt injection attacks or other exploits by malicious actors.": "允许智能体自动读取和编辑当前工作区之外的文件。请谨慎开启：这赋予了智能体更广的上下文视野，但也使其有权限触及工作区之外的敏感凭证与密钥。",
+  "Command Setup Script": "命令预处理脚本",
+  "A shell setup script run before every command the agent executes.": "在智能体执行每条终端指令前默认运行的 Shell 环境初始化脚本。",
+  "Enable Terminal Sandbox": "启用终端安全沙箱",
+  "Run terminal commands with sandbox restrictions.": "在安全沙箱隔离限制下运行终端命令，防止未经授权的系统级修改。",
+  "Sandbox Allow Network": "沙箱允许网络访问",
+  "Allow sandboxed commands to make network requests.": "允许沙箱内的指令向外部网络发起连接请求。",
+  "Terminal Command Auto Execution": "终端命令自动执行策略",
+  "Controls whether terminal commands require your approval before running.": "控制终端指令在执行前是否需要您手动点击确认。",
+  "Keyboard shortcuts": "键盘快捷键",
+  "Voice mode": "语音交互模式",
+  "Voice": "语音音色",
+  "The voice used in Voice mode. Powered by Gemini Live.": "语音模式下使用的拟真人声，由 Gemini Live 实时语音大模型驱动。",
+  "Microphone": "麦克风输入设备",
+  "Input device for voice mode and dictation.": "用于语音模式与语音输入的麦克风硬件设备。",
+  "System default": "系统默认设备",
+  "Not set": "尚未设置",
+  "How loud Antigravity's voice is.": "调节 Antigravity 朗读与语音回复的输出音量。",
+
+  // ================= 会话右键原生上下文菜单 =================
   "Rename": "重命名",
   "Pin": "置顶",
   "Unpin": "取消置顶",
@@ -44,7 +195,7 @@ const TRANSLATIONS = {
   "Delete Task": "删除任务",
   "Remove": "移除",
 
-  // ================= 复制子菜单 =================
+  // ================= 复制与分屏子菜单 =================
   "Conversation Name": "会话名称",
   "Conversation ID": "会话 ID",
   "Workspace Name": "工作区名称",
@@ -58,8 +209,6 @@ const TRANSLATIONS = {
   "Copy Markdown": "复制 Markdown",
   "Copy Path": "复制文件路径",
   "Copy Relative Path": "复制相对路径",
-
-  // ================= 分屏子菜单 =================
   "Split Right": "向右分屏",
   "Split Down": "向下分屏",
   "Replace with New": "替换为新会话",
@@ -68,7 +217,7 @@ const TRANSLATIONS = {
   "Conversation Log": "对话日志",
   "Review": "审查变更",
 
-  // ================= 左上菜单栏与下拉菜单 =================
+  // ================= 左上功能栏与下拉菜单 =================
   "Workspace": "工作区",
   "View": "视图",
   "Window": "窗口",
@@ -169,59 +318,9 @@ const TRANSLATIONS = {
   "Toggle Sidebar": "切换侧边栏",
   "Toggle Side Panel": "切换侧边面板",
   "Toggle Overview Panel": "切换概览面板",
-  "Notifications": "通知中心",
   "Display Options": "显示设置",
 
-  // ================= 系统设置：左侧分类列表 =================
-  "General": "通用设置",
-  "Appearance": "外观设置",
-  "Shortcuts": "快捷键一览",
-  "Models": "模型与配额",
-  "Browser": "浏览器设置",
-  "Application": "应用程序设置",
-  "Account": "账户与方案",
-  "Give Feedback": "提供意见反馈",
-  "Developer": "开发者选项",
-  "Not in Project": "全局设置 (未关联项目)",
-  "Conversations": "会话管理",
-
-  // ================= 系统设置：通用设置 (General) =================
-  "Configure agent execution, queued message delivery, and permissions.": "配置智能体执行策略、排队消息发送时机与安全权限预设。",
-  "Interface Layout": "界面布局模式",
-  "Knowledge Work": "知识工作模式",
-  "Simplified interface for research, writing, and everyday tasks.": "适合调研、写作、规划和日常任务的轻量精简界面。",
-  "Software Engineering": "软件工程模式",
-  "Full interface for coding, developer tools, and managing agents.": "包含代码编辑、开发者工具和智能体编排的完整开发界面。",
-  "Global Permissions": "全局安全权限",
-  "Configure global allowed and denied resource permissions.": "配置全局允许与拒绝访问的系统资源与文件权限。",
-  "Permission Preset": "权限预设模式",
-  "Controls the actions the agent can take.": "控制智能体在当前环境下可自动执行的操作范围。",
-  "Tool Permissions": "工具细粒度权限",
-  "Modify permissions for file, terminal, and MCP tools.": "自定义文件读写、终端指令和 MCP 扩展工具的授权策略。",
-  "Open": "打开配置",
-  "Network Access Rules": "网络访问规则",
-  "Configure allowed and denied URLs for reading.": "配置允许读取与禁止访问的网页与 API 域名列表。",
-  "Execution": "执行策略",
-  "Queued Messages": "排队消息发送策略",
-  "Configure when follow-up messages are sent.": "配置当智能体正在运行时代办追加消息的发送时机。",
-  "Queue": "排队等待",
-  "Send Immediately": "立即发送并打断",
-  "Interrupt the agent and send immediately.": "打断当前智能体运行并立即发送新消息。",
-  "Queue until after the current turn.": "排队等待，直到当前轮次任务完全结束后再发送。",
-  "Enter to Send": "回车键直接发送",
-  "Send messages with the keyboard's Enter key instead of starting a new line.": "使用键盘 Enter 键直接发送消息，而非换行（换行使用 Shift+Enter）。",
-  "Agent Non-Workspace File Access": "工作区外文件访问权限",
-  "Allow the agent to automatically view and edit files outside the current workspace. Use with caution: this gives the agent access to additional potentially-relevant information, but also allows the agent to access credential files, secrets, and other files outside of the workspace that could be targeted in prompt injection attacks or other exploits by malicious actors.": "允许智能体自动读取和编辑当前工作区之外的文件。请谨慎开启：这赋予了智能体更广的上下文视野，但也使其有权限触及工作区之外的敏感凭证与密钥。",
-  "Command Setup Script": "命令预处理脚本",
-  "A shell setup script run before every command the agent executes.": "在智能体执行每条终端指令前默认运行的 Shell 环境初始化脚本。",
-  "Enable Terminal Sandbox": "启用终端安全沙箱",
-  "Run terminal commands with sandbox restrictions.": "在安全沙箱隔离限制下运行终端命令，防止未经授权的系统级修改。",
-  "Sandbox Allow Network": "沙箱允许网络访问",
-  "Allow sandboxed commands to make network requests.": "允许沙箱内的指令向外部网络发起连接请求。",
-  "Terminal Command Auto Execution": "终端命令自动执行策略",
-  "Controls whether terminal commands require your approval before running.": "控制终端指令在执行前是否需要您手动点击确认。",
-
-  // ================= 系统设置：账户与方案 (Account) =================
+  // ================= 账户与方案 =================
   "Manage your plan, credentials, and general preferences.": "管理您的方案订阅、身份凭证与基础偏好。",
   "Enable Telemetry": "启用匿名遥测数据收集",
   "When toggled on, Antigravity collects usage data to help Google enhance performance and features.": "开启后，Antigravity 将收集匿名使用数据以帮助 Google 持续优化性能与功能体验。",
@@ -323,6 +422,7 @@ function fetchJson(port, pathStr) {
   });
 }
 
+// 核心客户端注入脚本主体（纯字符串，支持动态正则与属性翻译）
 function generateInjectionScript() {
   return `
     (() => {
@@ -342,6 +442,19 @@ function generateInjectionScript() {
           if (middle === "automations") return "暂无自动化任务";
           if (middle === "tasks") return "暂无任务";
           return "暂无" + (dict[middle] || middle);
+        }
+        if (trimmed.includes("it will fully refresh in")) {
+          let res = trimmed;
+          res = res.replace("You have used some of your weekly limit, it will fully refresh in", "您已消耗部分周度配额，将在");
+          res = res.replace("You have used some of your 5-hour limit, it will fully refresh in", "您已消耗部分 5 小时配额，将在");
+          res = res.replace(/days?/g, "天").replace(/hours?/g, "小时").replace(/minutes?/g, "分钟").replace(/seconds?/g, "秒");
+          return res.endsWith("。") ? res : res + "后完全重置。";
+        }
+        if (/^Show \\d+ breakdowns?$/.test(trimmed)) {
+          return trimmed.replace("Show ", "查看 ").replace(" breakdowns", " 项拆解明细").replace(" breakdown", " 项拆解明细");
+        }
+        if (/^\\d+[\\d,\\.]* \\/ \\d+[\\d,\\.]* tokens \\([\\d\\.]+%/i.test(trimmed)) {
+          return trimmed.replace(/tokens/gi, "Token");
         }
         if (trimmed.startsWith("Select model, current:")) {
           return trimmed.replace("Select model, current:", "选择模型（当前：") + "）";
@@ -474,10 +587,11 @@ function generateInjectionScript() {
 
       function scheduleBurstWalk() {
         requestAnimationFrame(() => walkAndTranslate(document.body));
-        setTimeout(() => walkAndTranslate(document.body), 20);
-        setTimeout(() => walkAndTranslate(document.body), 60);
-        setTimeout(() => walkAndTranslate(document.body), 150);
-        setTimeout(() => walkAndTranslate(document.body), 300);
+        setTimeout(() => walkAndTranslate(document.body), 15);
+        setTimeout(() => walkAndTranslate(document.body), 50);
+        setTimeout(() => walkAndTranslate(document.body), 120);
+        setTimeout(() => walkAndTranslate(document.body), 250);
+        setTimeout(() => walkAndTranslate(document.body), 500);
       }
 
       if (!window.__AGY_EVENTS_BOUND__) {
@@ -487,9 +601,9 @@ function generateInjectionScript() {
         document.addEventListener('pointerdown', scheduleBurstWalk, true);
         document.addEventListener('focusin', scheduleBurstWalk, true);
         document.addEventListener('mouseover', (e) => {
-          if (e.target && (e.target.getAttribute?.('role') === 'menuitem' || e.target.closest?.('[role="menu"], [role="menubar"], [class*="popover"], [class*="dropdown"], [data-radix-popper-content-wrapper]'))) {
-            setTimeout(() => walkAndTranslate(document.body), 30);
-            setTimeout(() => walkAndTranslate(document.body), 100);
+          if (e.target && (e.target.getAttribute?.('role') === 'menuitem' || e.target.closest?.('[role="menu"], [role="menubar"], [class*="popover"], [class*="dropdown"], [data-radix-popper-content-wrapper], [role="dialog"]'))) {
+            setTimeout(() => walkAndTranslate(document.body), 20);
+            setTimeout(() => walkAndTranslate(document.body), 80);
           }
         }, true);
       }
@@ -606,11 +720,12 @@ async function patchAsarPermanently() {
     }
   }
 
-  // 3. 修补 dist/preload.js (预加载层：前端 IPC 发送拦截 + 网页 DOM 注入)
+  // 3. 修补 dist/preload.js (预加载层：前端原生右键菜单拦截 + 安全无损 DOM 注入)
   const preloadPath = path.join(tempExtractDir, 'dist', 'preload.js');
   if (fs.existsSync(preloadPath)) {
     let preloadContent = fs.readFileSync(preloadPath, 'utf8');
 
+    // 拦截原生右键菜单调用
     if (!preloadContent.includes('AGY_PRELOAD_CONTEXT_DICT')) {
       const preloadCtxPatch = `
         const AGY_PRELOAD_CONTEXT_DICT = ${dictJson};
@@ -632,17 +747,26 @@ async function patchAsarPermanently() {
       );
     }
 
+    // 安全注入主世界 DOM 汉化引擎：使用标准 script 标签直接挂载执行
+    const injectionCodeStr = generateInjectionScript();
     const domPatch = `
       // --- Antigravity 界面自动深度汉化引擎 ---
-      window.addEventListener('DOMContentLoaded', () => {
+      function injectAgyLocalization() {
         try {
-          if (electron_1 && electron_1.webFrame) {
-            electron_1.webFrame.executeJavaScript(\`(\${${JSON.stringify(generateInjectionScript())}})()\`);
-          }
+          const script = document.createElement('script');
+          script.type = 'text/javascript';
+          script.textContent = ${JSON.stringify(injectionCodeStr)};
+          (document.head || document.documentElement || document.body).appendChild(script);
+          script.remove();
         } catch (e) {
-          console.error('[Antigravity 汉化] 启动注入失败:', e);
+          console.error('[Antigravity 汉化] 注入失败:', e);
         }
-      });
+      }
+      if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', injectAgyLocalization);
+      } else {
+        injectAgyLocalization();
+      }
     `;
 
     if (preloadContent.includes('// --- Antigravity 界面自动深度汉化引擎 ---')) {
@@ -661,9 +785,9 @@ async function patchAsarPermanently() {
 }
 
 async function main() {
-  console.log('正在执行原生上下文右键菜单与全量汉化更新...');
+  console.log('正在执行全方位汉化补丁更新 (修复系统设置、原生右键菜单与常驻注入机制)...');
   
-  // 1. 修补并打包底层 app.asar
+  // 1. 修补底层 app.asar（持久化常驻）
   await patchAsarPermanently();
 
   // 2. 对当前 live 窗口热注入 DOM 汉化
@@ -675,13 +799,13 @@ async function main() {
       for (const page of validPages) {
         await injectTranslationToLiveWindow(page.webSocketDebuggerUrl);
       }
-      console.log('当前运行窗口的极速全事件捕获监听器与全量词典已热更新完毕！');
+      console.log('当前运行窗口的 DOM 汉化引擎已热更新完毕！');
     } catch (e) {
       console.warn('窗口操作警告:', e.message);
     }
   }
 
-  console.log('全方位深度汉化（含会话原生右键菜单）部署完成！');
+  console.log('全方位深度汉化补丁部署完成！');
   process.exit(0);
 }
 
