@@ -1,19 +1,73 @@
 /**
- * Antigravity 深度全量汉化引擎 (Full Localization Engine - Comprehensive Edition v2.0)
+ * Antigravity 深度全量汉化引擎 (Full Localization Engine - Comprehensive Edition v3.5)
  * 覆盖：
- * 1. 左上/右上全部菜单、分屏、快捷键、侧边栏、系统设置、搜索框
- * 2. 复制子菜单 (Conversation Name, Conversation ID, Project Name, Workspace Name 等)
- * 3. 自动化任务页面 (Create with Prompt, New, No automations yet, 描述段落等)
- * 4. 会话上下文右键菜单 (Mark Unread, Mark as Read, Delete, Split 等)
- * 5. 碎片化 React 节点、Radix 浮层与快捷键级联菜单 DOM 毫秒级捕获
+ * 1. 深度修补 Electron 主进程 dist/ipcHandlers.js，原生级汉化会话右键上下文菜单 (window:show-context-menu)
+ * 2. 深度修补 Electron 预加载层 dist/preload.js，在 IPC 发送前拦截并汉化菜单项，并向主世界注入 DOM 汉化引擎
+ * 3. 深度修补 Electron 原生顶部菜单 dist/menu.js
+ * 4. 毫秒级 DOM 变动与全事件捕获引擎，覆盖所有设置、弹窗、级联子菜单、快捷键与页面元素
  */
 
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
-const asar = require('@electron/asar');
+
+let asar;
+try {
+  asar = require('@electron/asar');
+} catch (e) {
+  asar = require(path.join(__dirname, '..', 'node_modules', '@electron', 'asar'));
+}
 
 const TRANSLATIONS = {
+  // ================= 会话右键原生上下文菜单 (用户反馈重点) =================
+  "Rename": "重命名",
+  "Pin": "置顶",
+  "Unpin": "取消置顶",
+  "Mark Unread": "标记为未读",
+  "Mark as Unread": "标记为未读",
+  "Mark Read": "标记为已读",
+  "Mark as Read": "标记为已读",
+  "Copy": "复制",
+  "Split": "分屏",
+  "Stop": "停止",
+  "Delete": "删除",
+  "Delete Permanently": "永久删除",
+  "Restore": "还原",
+  "Archive": "归档",
+  "Unarchive": "取消归档",
+  "Share": "分享",
+  "Fork": "分叉对话",
+  "Telemetry": "遥测数据",
+  "View Debug": "查看调试信息",
+  "Delete Conversation": "删除会话",
+  "Delete Project": "删除项目",
+  "Delete Task": "删除任务",
+  "Remove": "移除",
+
+  // ================= 复制子菜单 =================
+  "Conversation Name": "会话名称",
+  "Conversation ID": "会话 ID",
+  "Workspace Name": "工作区名称",
+  "Worktree Name": "工作区名称",
+  "Project Name": "项目名称",
+  "Trajectory ID": "会话轨迹 ID",
+  "Copy Conversation Markdown": "复制对话 Markdown",
+  "Copy Conversation ID": "复制会话 ID",
+  "Copy Trajectory ID": "复制轨迹 ID",
+  "Copy Link": "复制链接",
+  "Copy Markdown": "复制 Markdown",
+  "Copy Path": "复制文件路径",
+  "Copy Relative Path": "复制相对路径",
+
+  // ================= 分屏子菜单 =================
+  "Split Right": "向右分屏",
+  "Split Down": "向下分屏",
+  "Replace with New": "替换为新会话",
+  "Remove from Split": "从分屏中移除",
+  "More actions": "更多操作",
+  "Conversation Log": "对话日志",
+  "Review": "审查变更",
+
   // ================= 左上菜单栏与下拉菜单 =================
   "Workspace": "工作区",
   "View": "视图",
@@ -40,7 +94,6 @@ const TRANSLATIONS = {
   "Undo": "撤销",
   "Redo": "重做",
   "Cut": "剪切",
-  "Copy": "复制",
   "Paste": "粘贴",
   "Select All": "全选",
   "Actual Size": "实际大小",
@@ -55,47 +108,6 @@ const TRANSLATIONS = {
   "Learn more": "了解详情",
   "About Antigravity": "关于 Antigravity",
   "Check for Updates": "检查软件更新",
-
-  // ================= 右上操作与分屏菜单 =================
-  "Rename": "重命名",
-  "Pin": "置顶",
-  "Unpin": "取消置顶",
-  "Archive": "归档",
-  "Unarchive": "取消归档",
-  "Split": "分屏",
-  "Split Right": "向右分屏",
-  "Split Down": "向下分屏",
-  "Replace with New": "替换为新会话",
-  "Remove from Split": "从分屏中移除",
-  "More actions": "更多操作",
-  "Conversation Log": "对话日志",
-  "Review": "审查变更",
-
-  // ================= 会话列表右键上下文菜单 (视频与截屏新增) =================
-  "Mark Unread": "标记为未读",
-  "Mark as Unread": "标记为未读",
-  "Mark Read": "标记为已读",
-  "Mark as Read": "标记为已读",
-  "Delete": "删除",
-  "Delete Conversation": "删除会话",
-  "Delete Project": "删除项目",
-  "Delete Task": "删除任务",
-  "Remove": "移除",
-
-  // ================= 复制子菜单 =================
-  "Conversation Name": "会话名称",
-  "Conversation ID": "会话 ID",
-  "Workspace Name": "工作区名称",
-  "Worktree Name": "工作区名称",
-  "Project Name": "项目名称",
-  "Trajectory ID": "会话轨迹 ID",
-  "Copy Conversation Markdown": "复制对话 Markdown",
-  "Copy Conversation ID": "复制会话 ID",
-  "Copy Trajectory ID": "复制轨迹 ID",
-  "Copy Link": "复制链接",
-  "Copy Markdown": "复制 Markdown",
-  "Copy Path": "复制文件路径",
-  "Copy Relative Path": "复制相对路径",
 
   // ================= 自动化任务页面 =================
   "Create with Prompt": "使用提示词创建",
@@ -219,68 +231,6 @@ const TRANSLATIONS = {
   "You can upgrade to a Google AI Ultra plan to receive higher rate limits.": "您可以升级到 Google AI Ultra 方案以获得更高的请求速率与模型配额上限。",
   "Manage Subscription": "管理订阅",
   "Sign Out": "退出登录",
-
-  // ================= 系统设置：外观设置 (Appearance) =================
-  "Customize theme, font size, and UI density.": "自定义界面主题颜色、代码字号与布局紧凑度。",
-  "Theme": "主题模式",
-  "System": "跟随系统",
-  "Dark": "深色模式",
-  "Light": "浅色模式",
-  "Font Size": "编辑器字号",
-  "UI Density": "界面密度",
-  "Comfortable": "标准宽适",
-  "Compact": "紧凑高效",
-
-  // ================= 系统设置：快捷键 (Shortcuts) =================
-  "View and manage keyboard shortcuts.": "查看与配置全局键盘快捷键。",
-  "New conversation": "新建会话",
-  "Open command palette": "打开命令面板",
-  "Toggle terminal": "切换内置终端",
-  "Toggle sidebar": "切换左侧边栏",
-  "Focus input": "聚焦输入框",
-  "Archive conversation": "归档会话",
-  "Delete conversation": "删除会话",
-  "Rename conversation": "重命名会话",
-  "Close active tab": "关闭当前标签页",
-  "Global Shortcuts": "全局快捷键",
-  "Conversation Shortcuts": "会话操作快捷键",
-  "Navigation Shortcuts": "页面导航快捷键",
-
-  // ================= 系统设置：模型与配额 (Models) =================
-  "Configure models, context limits, and reasoning depth.": "配置默认语言模型、上下文窗口大小与深度推理深度。",
-  "Default Model": "默认语言模型",
-  "Select the default model for new conversations.": "选择新建对话时默认使用的基础大语言模型。",
-  "Thinking / Reasoning": "深度思考 / 推理模式",
-  "Enable extended thinking for complex problems.": "为复杂工程与算法问题启用更深入的扩展思考与链式推理。",
-  "Quota & Rate Limits": "当前配额与速率限制",
-  "Fast Requests": "高速模型请求",
-  "Deep Thinking Requests": "深度思考请求",
-  "Resets daily": "配额每日自动重置",
-
-  // ================= 系统设置：浏览器设置 (Browser) =================
-  "Configure built-in browser viewport, cookies, and automation tools.": "配置内置浏览器视口分辨率、Cookie 隔离策略与网页自动化能力。",
-  "Browser Sandbox": "内置浏览器安全沙箱",
-  "Run the browser tool in an isolated sandbox.": "在隔离沙箱环境中运行内置浏览器，杜绝跨站点脚本与本地文件泄露风险。",
-  "Default Viewport": "默认渲染视口分辨率",
-  "Headless Mode": "无头模式 (后台运行)",
-  "Allow Screenshots": "允许智能体捕获网页截屏",
-
-  // ================= 系统设置：应用程序设置 (Application) =================
-  "Application updates, startup preferences, and storage.": "应用程序自动更新、系统开机启动偏好与本地存储管理。",
-  "Auto Update": "自动检查并下载更新",
-  "Keep Antigravity up to date automatically.": "保持 Antigravity 始终处于最新版本，第一时间获取功能升级与性能改进。",
-  "Open at Login": "开机自启动",
-  "Launch Antigravity when your computer boots up.": "在开机登录系统时自动启动 Antigravity。",
-  "Cache & Storage": "本地缓存与存储管理",
-  "Clear Cache": "清理本地缓存",
-  "Restart Application": "重启应用程序",
-
-  // ================= 系统设置：意见反馈 (Give Feedback) =================
-  "Help improve Antigravity by sharing feedback or reporting bugs.": "分享您在使用中的真实体验、功能建议或报告技术缺陷，共同建设更好的 Antigravity。",
-  "Send Feedback": "提交反馈",
-  "Describe your experience or problem...": "请详细描述您遇到的问题或想要的新功能...",
-  "Attach screenshot": "附上当前屏幕截图",
-  "Send": "发送反馈",
 
   // ================= 对话交互与通用按钮 =================
   "Ask anything, @ to mention, / for actions": "输入任何问题，输入 @ 引用上下文，输入 / 调出快捷操作...",
@@ -431,7 +381,6 @@ function generateInjectionScript() {
             return;
           }
 
-          // 解决单个直接文本子节点
           if (node.childNodes.length === 1 && node.childNodes[0].nodeType === Node.TEXT_NODE) {
             const raw = node.childNodes[0].nodeValue;
             if (raw) {
@@ -443,7 +392,6 @@ function generateInjectionScript() {
             }
           }
 
-          // 属性翻译
           if (node.placeholder) {
             const tr = translateText(node.placeholder.trim());
             if (tr !== node.placeholder.trim()) {
@@ -500,16 +448,12 @@ function generateInjectionScript() {
       }
 
       window.__AGY_TRANSLATOR_RUN__ = () => walkAndTranslate(document.body);
-
-      // 立即对已有 DOM 进行全量翻译
       walkAndTranslate(document.body);
 
-      // 清除旧的 Observer (避免使用旧闭包)
       if (window.__AGY_OBSERVER__) {
         try { window.__AGY_OBSERVER__.disconnect(); } catch (e) {}
       }
 
-      // 创建新的 MutationObserver
       window.__AGY_OBSERVER__ = new MutationObserver((mutations) => {
         for (const mutation of mutations) {
           if (mutation.type === 'childList') {
@@ -536,15 +480,12 @@ function generateInjectionScript() {
         setTimeout(() => walkAndTranslate(document.body), 300);
       }
 
-      // 全事件捕获监听（点击、右键菜单、鼠标悬停展开子菜单、聚焦）
       if (!window.__AGY_EVENTS_BOUND__) {
         window.__AGY_EVENTS_BOUND__ = true;
-
         document.addEventListener('click', scheduleBurstWalk, true);
         document.addEventListener('contextmenu', scheduleBurstWalk, true);
         document.addEventListener('pointerdown', scheduleBurstWalk, true);
         document.addEventListener('focusin', scheduleBurstWalk, true);
-
         document.addEventListener('mouseover', (e) => {
           if (e.target && (e.target.getAttribute?.('role') === 'menuitem' || e.target.closest?.('[role="menu"], [role="menubar"], [class*="popover"], [class*="dropdown"], [data-radix-popper-content-wrapper]'))) {
             setTimeout(() => walkAndTranslate(document.body), 30);
@@ -587,7 +528,7 @@ async function injectTranslationToLiveWindow(wsUrl) {
   });
 }
 
-// 深度修补 app.asar
+// 深度修补 app.asar (三层深度原生级拦截：menu.js + ipcHandlers.js + preload.js)
 async function patchAsarPermanently() {
   const asarPath = 'C:\\Users\\GAIL\\AppData\\Local\\Programs\\antigravity\\resources\\app.asar';
   const asarBakPath = 'C:\\Users\\GAIL\\AppData\\Local\\Programs\\antigravity\\resources\\app.asar.bak';
@@ -606,54 +547,20 @@ async function patchAsarPermanently() {
   }
   asar.extractAll(asarPath, tempExtractDir);
 
-  // 1. 修补 dist/menu.js
+  const dictJson = JSON.stringify(TRANSLATIONS);
+
+  // 1. 修补 dist/menu.js (顶部窗口原生菜单)
   const menuPath = path.join(tempExtractDir, 'dist', 'menu.js');
   if (fs.existsSync(menuPath)) {
     let menuContent = fs.readFileSync(menuPath, 'utf8');
     const menuPatch = `
       // --- Antigravity 中文顶部菜单补丁 ---
-      const AGY_MENU_DICT = {
-        'File': '文件 (&F)',
-        'Edit': '编辑 (&E)',
-        'View': '视图 (&V)',
-        'Window': '窗口 (&W)',
-        'Help': '帮助 (&H)',
-        'Workspace': '工作区',
-        'Create Project': '创建项目',
-        'Create New Project': '创建新项目',
-        'Command Palette': '命令面板',
-        'Open Command Palette': '打开命令面板',
-        'New Window': '新建窗口',
-        'New Conversation': '新建对话',
-        'Connect to WSL': '连接至 WSL',
-        'Reopen Locally': '在本地重新打开',
-        'Close Window': '关闭窗口',
-        'Close': '关闭',
-        'Exit': '退出',
-        'Undo': '撤销',
-        'Redo': '重做',
-        'Cut': '剪切',
-        'Copy': '复制',
-        'Paste': '粘贴',
-        'Select All': '全选',
-        'Actual Size': '实际大小',
-        'Zoom In': '放大',
-        'Zoom Out': '缩小',
-        'Reset Zoom': '重置缩放',
-        'Toggle Full Screen': '切换全屏',
-        'Toggle Developer Tools': '切换开发者工具',
-        'Debug Console': '调试控制台',
-        'Minimize': '最小化',
-        'Maximize': '最大化',
-        'Docs': '官方文档',
-        'Check for Updates': '检查更新',
-        'About Antigravity': '关于 Antigravity'
-      };
+      const AGY_MENU_DICT = ${dictJson};
       function localizeMenuTree(m) {
         if (!m || !m.items) return;
         m.items.forEach(it => {
-          if (it.label && AGY_MENU_DICT[it.label]) {
-            it.label = AGY_MENU_DICT[it.label];
+          if (it.label && AGY_MENU_DICT[it.label.trim()]) {
+            it.label = AGY_MENU_DICT[it.label.trim()];
           }
           if (it.submenu) localizeMenuTree(it.submenu);
         });
@@ -670,15 +577,68 @@ async function patchAsarPermanently() {
     }
   }
 
-  // 2. 修补 dist/preload.js
+  // 2. 修补 dist/ipcHandlers.js (主进程原生上下文右键菜单)
+  const ipcPath = path.join(tempExtractDir, 'dist', 'ipcHandlers.js');
+  if (fs.existsSync(ipcPath)) {
+    let ipcContent = fs.readFileSync(ipcPath, 'utf8');
+    const ipcPatch = `
+      // --- Antigravity 原生上下文右键菜单汉化补丁 ---
+      const AGY_CONTEXT_DICT = ${dictJson};
+      function localizeNativeContextItems(items) {
+        if (!Array.isArray(items)) return;
+        items.forEach(it => {
+          if (it && it.label && AGY_CONTEXT_DICT[it.label.trim()]) {
+            it.label = AGY_CONTEXT_DICT[it.label.trim()];
+          }
+          if (it && it.submenu) localizeNativeContextItems(it.submenu);
+          if (it && it.items) localizeNativeContextItems(it.items);
+        });
+      }
+    `;
+
+    if (!ipcContent.includes('AGY_CONTEXT_DICT')) {
+      ipcContent = ipcPatch + '\n' + ipcContent;
+      ipcContent = ipcContent.replace(
+        'function buildContextMenuTemplate(items, onSelect) {',
+        'function buildContextMenuTemplate(items, onSelect) {\n    localizeNativeContextItems(items);'
+      );
+      fs.writeFileSync(ipcPath, ipcContent, 'utf8');
+    }
+  }
+
+  // 3. 修补 dist/preload.js (预加载层：前端 IPC 发送拦截 + 网页 DOM 注入)
   const preloadPath = path.join(tempExtractDir, 'dist', 'preload.js');
   if (fs.existsSync(preloadPath)) {
     let preloadContent = fs.readFileSync(preloadPath, 'utf8');
-    const preloadPatch = `
+
+    if (!preloadContent.includes('AGY_PRELOAD_CONTEXT_DICT')) {
+      const preloadCtxPatch = `
+        const AGY_PRELOAD_CONTEXT_DICT = ${dictJson};
+        function localizePreloadContextItems(items) {
+          if (!Array.isArray(items)) return;
+          items.forEach(it => {
+            if (it && it.label && AGY_PRELOAD_CONTEXT_DICT[it.label.trim()]) {
+              it.label = AGY_PRELOAD_CONTEXT_DICT[it.label.trim()];
+            }
+            if (it && it.submenu) localizePreloadContextItems(it.submenu);
+            if (it && it.items) localizePreloadContextItems(it.items);
+          });
+        }
+      `;
+      preloadContent = preloadCtxPatch + '\n' + preloadContent;
+      preloadContent = preloadContent.replace(
+        "showContextMenu: (items) => electron_1.ipcRenderer.invoke('window:show-context-menu', items),",
+        "showContextMenu: (items) => { try { localizePreloadContextItems(items); } catch(e){} return electron_1.ipcRenderer.invoke('window:show-context-menu', items); },"
+      );
+    }
+
+    const domPatch = `
       // --- Antigravity 界面自动深度汉化引擎 ---
       window.addEventListener('DOMContentLoaded', () => {
         try {
-          ${generateInjectionScript()}
+          if (electron_1 && electron_1.webFrame) {
+            electron_1.webFrame.executeJavaScript(\`(\${${JSON.stringify(generateInjectionScript())}})()\`);
+          }
         } catch (e) {
           console.error('[Antigravity 汉化] 启动注入失败:', e);
         }
@@ -687,37 +647,41 @@ async function patchAsarPermanently() {
 
     if (preloadContent.includes('// --- Antigravity 界面自动深度汉化引擎 ---')) {
       const startIdx = preloadContent.indexOf('// --- Antigravity 界面自动深度汉化引擎 ---');
-      preloadContent = preloadContent.slice(0, startIdx) + preloadPatch;
+      preloadContent = preloadContent.slice(0, startIdx) + domPatch;
     } else {
-      preloadContent = preloadContent + '\n' + preloadPatch;
+      preloadContent = preloadContent + '\n' + domPatch;
     }
     fs.writeFileSync(preloadPath, preloadContent, 'utf8');
   }
 
-  // 3. 重新打包
+  // 4. 重新打包
   await asar.createPackage(tempExtractDir, asarPath);
   fs.rmSync(tempExtractDir, { recursive: true, force: true });
-  console.log('底层 app.asar 汉化补丁更新成功！');
+  console.log('底层 app.asar 汉化补丁 (主进程 + 预加载 + 菜单) 更新成功！');
 }
 
 async function main() {
-  console.log('正在执行全方位汉化更新 (右键上下文菜单 + 分屏复制二级菜单 + 顶部功能栏 + 自动化任务)...');
+  console.log('正在执行原生上下文右键菜单与全量汉化更新...');
+  
+  // 1. 修补并打包底层 app.asar
+  await patchAsarPermanently();
+
+  // 2. 对当前 live 窗口热注入 DOM 汉化
   const port = getDevToolsPort();
   if (port) {
     try {
       const targets = await fetchJson(port, '/json');
-      const validPages = targets.filter(t => t.type === 'page' && t.webSocketDebuggerUrl);
+      const validPages = targets.filter(t => t.type === 'page' && t.url.startsWith('https://127.0.0.1'));
       for (const page of validPages) {
         await injectTranslationToLiveWindow(page.webSocketDebuggerUrl);
       }
       console.log('当前运行窗口的极速全事件捕获监听器与全量词典已热更新完毕！');
     } catch (e) {
-      console.warn('热注入警告:', e.message);
+      console.warn('窗口操作警告:', e.message);
     }
   }
 
-  await patchAsarPermanently();
-  console.log('全方位深度汉化补丁部署完成！');
+  console.log('全方位深度汉化（含会话原生右键菜单）部署完成！');
   process.exit(0);
 }
 
