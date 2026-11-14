@@ -1,0 +1,13 @@
+{
+  "name": "chinese-pack",
+  "displayName": "Antigravity 简体中文语言包",
+  "description": "Antigravity 官方深度汉化套件：提供全套 AI Agent 简体中文深度交互与思考准则、平台全功能中文使用指南、中英专业术语表，以及一键界面 (UI) 汉化工具引擎。",
+  "version": "1.0.0",
+  "author": "Antigravity Localization Team",
+  "logo": "assets/logo.svg",
+  "suggestedPrompts": [
+    "全面介绍 Antigravity 的核心功能和中文使用技巧",
+    "帮我汉化当前的 Antigravity 软件界面",
+    "查看 Antigravity 核心概念与界面的中英对照表"
+  ]
+}
