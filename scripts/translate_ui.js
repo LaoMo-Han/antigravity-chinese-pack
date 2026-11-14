@@ -84,10 +84,31 @@ const TRANSLATIONS = {
   "Browser Actuation Rules": "网页操作执行规则",
   "Configure allowed and denied URLs for the browser subagent. It runs in the built-in browser, so no separate browser install is needed.": "配置浏览器子智能体允许访问与禁止访问的网址规则。智能体在内置浏览器中运行，无需额外安装其他独立浏览器。",
 
-  // ================= 系统设置：应用程序设置 (Application - 截图 2) =================
+  // ================= 系统设置：应用程序设置 (Application - 截图 1) =================
   "Version": "版本信息",
   "App version": "客户端版本",
   "Advanced Settings": "高级设置",
+  "Automatic Check for Updates": "自动检查软件更新",
+  "Automatically prompt you to restart the app when a new update is available. When disabled, you can check for updates manually from the app menu.": "当有新版本可用时自动提示您重启应用以完成更新。停用后，您可以从应用菜单中手动检查更新。",
+
+  // ================= 系统设置：外观设置 - 高级设置 (Appearance - 截图 2) =================
+  "Chat Layout": "会话区域布局",
+  "Conversation Width": "会话面板宽度",
+  "Configure the maximum width of the conversation panel.": "配置对话面板的最大呈现宽度。",
+  "Narrow": "窄屏居中",
+  "Wide": "宽屏模式",
+  "Fill": "撑满窗口",
+  "Accessibility": "无障碍辅助功能",
+  "Screen Reader Mode": "屏幕朗读器模式",
+  "Optimize the interface and terminal output for screen readers.": "为屏幕朗读辅助工具优化界面与终端文本输出结构。",
+  "Custom Context Menus": "自定义右键快捷菜单",
+  "Replace the default browser right-click menu with quick actions.": "使用快捷操作菜单替换默认的浏览器右键上下文菜单。",
+  "Terminal Placement": "终端停靠位置",
+  "Choose where terminal sessions appear.": "选择终端会话在界面中的显示与停靠位置。",
+  "Artifact Width": "制品呈现宽度",
+  "Configure the maximum width of artifact panels.": "配置生成制品面板的最大呈现宽度。",
+  "Context Usage Indicator": "上下文用量指示器",
+  "Show token usage and context window limits in the conversation.": "在会话界面中实时显示 Token 消耗进度与上下文窗口容量上限。",
 
   // ================= 系统设置：快捷键一览 (Shortcuts - 截图 4 & 5) =================
   "Keyboard shortcuts for quick navigation and control.": "用于快速导航与交互控制的全局快捷键一览。",
