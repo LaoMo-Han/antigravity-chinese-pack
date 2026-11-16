@@ -3,9 +3,11 @@
  */
 
 const fs = require('fs');
+const path = require('path');
 
-const asarPath = 'C:\\Users\\GAIL\\AppData\\Local\\Programs\\antigravity\\resources\\app.asar';
-const asarBakPath = 'C:\\Users\\GAIL\\AppData\\Local\\Programs\\antigravity\\resources\\app.asar.bak';
+const localAppData = process.env.LOCALAPPDATA || path.join(process.env.USERPROFILE || 'C:\\', 'AppData', 'Local');
+const asarPath = path.join(localAppData, 'Programs', 'antigravity', 'resources', 'app.asar');
+const asarBakPath = path.join(localAppData, 'Programs', 'antigravity', 'resources', 'app.asar.bak');
 
 if (!fs.existsSync(asarBakPath)) {
   console.log('未找到原版备份文件 (app.asar.bak)，无需还原。');
@@ -20,4 +22,5 @@ try {
   console.log('====================================================');
 } catch (e) {
   console.error('还原失败:', e.message);
+  process.exit(1);
 }

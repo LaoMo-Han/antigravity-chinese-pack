@@ -732,8 +732,9 @@ async function injectTranslationToLiveWindow(wsUrl) {
 
 // 深度修补 app.asar (三层深度原生级拦截：menu.js + ipcHandlers.js + preload.js)
 async function patchAsarPermanently() {
-  const asarPath = 'C:\\Users\\GAIL\\AppData\\Local\\Programs\\antigravity\\resources\\app.asar';
-  const asarBakPath = 'C:\\Users\\GAIL\\AppData\\Local\\Programs\\antigravity\\resources\\app.asar.bak';
+  const localAppData = process.env.LOCALAPPDATA || path.join(process.env.USERPROFILE || 'C:\\', 'AppData', 'Local');
+  const asarPath = path.join(localAppData, 'Programs', 'antigravity', 'resources', 'app.asar');
+  const asarBakPath = path.join(localAppData, 'Programs', 'antigravity', 'resources', 'app.asar.bak');
   const tempExtractDir = path.join(__dirname, '..', '.temp_asar_extract');
 
   if (!fs.existsSync(asarPath)) return;
